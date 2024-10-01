@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body style="background-color: #212121; color: white">
+    <div class="weather">
+      <h1 class="header">Search For Weather</h1>
+      <input type="text" class="Input-text" placeholder="Enter the City Name" />
+      <button class="search">Search</button>
+      <button class="go-back" style="display: none">Back</button>
+      <div class="weather-info"></div>
+    </div>
+  </body>
+  <style>
+   body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  background-color: #212121;
+  color: white;
+}
+
+.weather {
+  text-align: center;
+  width: 100%;
+  max-width: 400px;
+  padding: 50px;
+  background-color: #333;
+  border-radius: 10px;
+  box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.header {
+  font-size: 2rem;
+}
+
+.Input-text {
+  width: 80%;
+  padding: 10px;
+  font-size: 1rem;
+  margin-bottom: 20px;
+  border: none;
+  border-radius: 5px;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+}
+
+button {
+  padding: 10px 20px;
+  margin: 5px;
+  border: none;
+  border-radius: 5px;
+  font-size: 1rem;
+  cursor: pointer;
+  background-color: #4caf50;
+  color: white;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #45a049;
+}
+
+.go-back {
+  background-color: #f44336;
+}
+
+.go-back:hover {
+  background-color: #e53935;
+}
+
+.weather-info {
+  margin-top: 20px;
+}
+
+.weather-info h2 {
+  font-size: 1.5rem;
+  margin-bottom: 10px;
+}
+
+.weather-info p {
+  margin: 5px 0;
+  font-size: 1.1rem;
+}
+
+.weather-info img {
+  margin-top: 10px;
+  width: 100px;
+}
+  </style>
+  <script>
+    const cityNameInput = document.querySelector(".Input-text"); //city name in input.
+    const searchBtn = document.querySelector(".search");
+    const goBackBtn = document.querySelector(".go-back");
+    const weatherInfo = document.querySelector(".weather-info");
+    const header = document.querySelector(".header");
+
+    // state variables : Weatherdata,ui buttons,City , errors when data isnt present.
+    let state = {
+      city: "",
+      error: null,
+      weatherData: null,
+      showSearchBtn: true,
+      showgoBackBtn: false,
+      showHeaderText: true,
+    };
+
+    //function to render the data
+    function render() {
+      weatherInfo.innerHTML = ""; // clear content on entry.
+      //toggle ui  in initial and final states
+      searchBtn.style.display = state.showSearchBtn ? "inline" : "none";
+      goBackBtn.style.display = state.showgoBackBtn ? "inline" : "none";
+      header.style.display = state.showHeaderText ? "inline" : "none";
+
+      // if there is error , display the error message,
+      if (state.error) {
+        weatherInfo.innerHTML = `<p style = "color:red;">${state.error}</p>`;
+      }
+      // if we have data , display it.
+      else if (state.weatherData) {
+        // display the data .
+        const weather = state.weatherData;
+        // weather data displayed below.
+        weatherInfo.innerHTML = `
+           <h2>Weather in ${weather.name}</h2>
+          <p>Temperature: ${(weather.main.temp - 273.15).toFixed(2)}°C</p>
+          <p>Weather: ${weather.weather[0].description}</p>
+          <img src="http://openweathermap.org/img/w/${
+            weather.weather[0].icon
+          }.png" alt="Weather Icon">
+          <p>Humidity: ${weather.main.humidity}%</p>
+          <p>Wind Speed: ${weather.wind.speed} m/s</p>
+           `;
+      }
+    }
+    //function to FetchApi
+    function fetchApi() {
+      const cityName = state.city;
+      const apiKey = "f5e30e840465f0ffd01871dbe1521a1f";
+      // Only proceed if the city name is not empty
+      if (!cityName) {
+        state.error = "Please enter a valid city name.";
+        render();
+        return;
+      }
+
+      // fetch weather by city when entered an API key.
+
+      fetch(
+        `https://api.openweathermap.org/data/2.5/weather?q=${cityName}&appid=${apiKey}`
+      ) //  fetched data from openApi
+        // get response from server . if response is a error , throw error, convert the response to json format to parse it .
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("City Not Found");
+          }
+          return response.json();
+        })
+
+        // get data  from server . handle error and update display accordingly by  manipulating the state variables. .
+        .then((data) => {
+          //show only go back button in 2nd state after data is fetched.
+          state = {
+            ...state,
+            city: "",
+            error: null,
+            weatherData: data,
+            showSearchBtn: false, //hide search
+            showgoBackBtn: true, // show go back
+            showHeaderText: false, //hide header
+          };
+          render(); // re render UI with updated state.
+        })
+        // handle error. show only go back since you can go back and enter again..
+        .catch((error) => {
+          state = {
+            ...state,
+            city: "",
+            error: error.message,
+            weatherData: null,
+            showSearchBtn: false, //hide search
+            showgoBackBtn: true, // show go back
+            showHeaderText: false, //hide header
+          };
+          render(); // re render UI when error.
+        });
+    }
+
+    // event listeners for when button is clicked on seach button ..
+    searchBtn.addEventListener("click", () => {
+      // update cityName from input .
+      state.city = cityNameInput.value.trim();
+      if (state.city) {
+        fetchApi(); // get data
+      } else {
+        state.error = "Please Enter a Valid City Name ";
+        render(); // re render if invalid city.
+      }
+    });
+    // event listener when button is clicked on goBack button... reset the state and render.
+    goBackBtn.addEventListener("click", () => {
+      state = {
+        ...state,
+        city: "",
+        error: null,
+        weatherData: null,
+        showSearchBtn: true, // Show search button
+        showgoBackBtn: false, // Hide go-back button
+        showHeaderText: true, // Show header
+      };
+      render(); // Re-render UI to show initial state
+    });
+    render(); //initial render for when page loads
+  </script>
+</html>
