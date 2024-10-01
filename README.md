@@ -39,9 +39,7 @@ This is a simple weather application built with **HTML**, **CSS**, and **JavaScr
 2. Press the **Search** button.
 3. The app will display the current weather details for that city.
 
-## Example Screenshot
 
-![Weather App Screenshot](https://path-to-your-image.png)
 
 ## API Key
 
